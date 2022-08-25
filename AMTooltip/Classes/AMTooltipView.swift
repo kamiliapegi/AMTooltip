@@ -219,8 +219,8 @@ open class AMTooltipView: UIView {
         }
         
         
-        var focusFrame =  (focusView.superview?.convert(focusView.frame, to: view))!
-        
+        var focusFrame =  (focusView.superview?.convert(focusView.frame, to: view)) ?? CGRect(x: 0, y: 0, width: 0, height: 0)
+
         
         
         focusFrame.size.width += options.focustViewHorizontalPadding * 2

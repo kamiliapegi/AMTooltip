@@ -46,7 +46,6 @@ public class AMTooltipViewOptions{
     var focustViewHorizontalPadding:CGFloat!
     
     
-    
     public init(
         side:AMTooltipViewSide = .auto,
         textColor:UIColor = UIColor.black,

@@ -44,8 +44,10 @@ public class AMTooltipViewOptions{
     var focusViewRadius:CGFloat!
     var focustViewVerticalPadding:CGFloat!
     var focustViewHorizontalPadding:CGFloat!
-    
-    
+    var okButtonText:String!
+    var okButtonBgColor:UIColor!
+    var okButtonAlignment:UIControl.ContentHorizontalAlignment = .center
+    var okButtonCornerRadius:CGFloat = 4
     
     public init(
         side:AMTooltipViewSide = .auto,
@@ -68,7 +70,11 @@ public class AMTooltipViewOptions{
         dotBorderColor:UIColor = UIColor.white,
         focusViewRadius:CGFloat = 6,
         focustViewVerticalPadding:CGFloat = 5,
-        focustViewHorizontalPadding:CGFloat = 15
+        focustViewHorizontalPadding:CGFloat = 15,
+        okButtonText:String = "OK",
+        okButtonBgColor:UIColor = .clear,
+        okButtonAlignment:UIControl.ContentHorizontalAlignment = .center,
+        okButtonCornerRadius:CGFloat = 4
         ){
      
         self.side = side
@@ -92,8 +98,10 @@ public class AMTooltipViewOptions{
         self.focusViewRadius = focusViewRadius
         self.focustViewVerticalPadding = focustViewVerticalPadding
         self.focustViewHorizontalPadding = focustViewHorizontalPadding
-         
-        
+        self.okButtonText = okButtonText
+        self.okButtonBgColor = okButtonBgColor
+        self.okButtonAlignment = okButtonAlignment
+        self.okButtonCornerRadius = okButtonCornerRadius
     }
     
     
@@ -142,7 +150,10 @@ open class AMTooltipView: UIView {
     @IBOutlet weak open  var bottomDotLineView: UIView!
     @IBOutlet weak open  var bottomMessageWrapperView: UIView!
     
-    
+    @IBOutlet weak var topButtonOk: UIButton!
+    @IBOutlet weak var topDummyLabel: UILabel!
+    @IBOutlet weak var bottomButtonOk: UIButton!
+    @IBOutlet weak var bottomDummyLabel: UILabel!
     
     @IBOutlet weak var textWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var bottomTextWidthConstraint: NSLayoutConstraint!
@@ -160,7 +171,7 @@ open class AMTooltipView: UIView {
     var targetView:UIView!
     var focusView:UIView!
     var focusFrame:CGRect!
-    
+    open var isBeingDisplayed = false
     
     //MARK: - init
     
@@ -206,8 +217,10 @@ open class AMTooltipView: UIView {
     
     //MARK: - init and show
     
+    // Custom
+    // Previously: @discardableResult convenience public init(options:AMTooltipViewOptions = AMTooltipViewOptions(), message:String!, focusView:UIView, target:Any, complete:(()->())! = nil)
     
-    @discardableResult convenience public init(options:AMTooltipViewOptions = AMTooltipViewOptions(), message:String!, focusView:UIView, target:Any, complete:(()->())! = nil){
+    @discardableResult convenience public init(options:AMTooltipViewOptions = AMTooltipViewOptions(), message:String? = "", attributedMessage:NSMutableAttributedString? = nil, focusView:UIView, target:Any, complete:(()->())! = nil){
         
         var view:UIView!
         if let targetView = target as? UIView{ view = targetView}
@@ -218,10 +231,7 @@ open class AMTooltipView: UIView {
             return
         }
         
-        
         var focusFrame =  (focusView.superview?.convert(focusView.frame, to: view)) ?? CGRect(x: 0, y: 0, width: 0, height: 0)
-
-        
         
         focusFrame.size.width += options.focustViewHorizontalPadding * 2
         focusFrame.size.height += options.focustViewVerticalPadding * 2
@@ -229,16 +239,25 @@ open class AMTooltipView: UIView {
         focusFrame.origin.y -= options.focustViewVerticalPadding
         focusFrame.origin.x -= options.focustViewHorizontalPadding
         
+        // Custom
+        // Previously: without if condition
+        // self.init(options: options, message: message, focusFrame: focusFrame, target: target, complete:complete)
         
-        self.init(options: options, message: message, focusFrame: focusFrame, target: target, complete:complete)
+        if let attrMessage = attributedMessage {
+            self.init(options: options, attributedMessage: attrMessage, focusFrame: focusFrame, target: target, complete:complete)
+        } else {
+            self.init(options: options, message: message, focusFrame: focusFrame, target: target, complete:complete)
+        }
         
         
         self.focusView = focusView
     }
     
     
+    // Custom
+    // Previously: @discardableResult convenience public init(options:AMTooltipViewOptions = AMTooltipViewOptions(), message:String!, focusFrame:CGRect, target:Any, complete:(()->())! = nil)
     
-    @discardableResult convenience public init(options:AMTooltipViewOptions = AMTooltipViewOptions(), message:String!, focusFrame:CGRect, target:Any, complete:(()->())! = nil){
+    @discardableResult convenience public init(options:AMTooltipViewOptions = AMTooltipViewOptions(), message:String? = "", attributedMessage:NSMutableAttributedString? = nil, focusFrame:CGRect, target:Any, complete:(()->())! = nil){
         
         
         self.init(frame:.zero)
@@ -246,7 +265,17 @@ open class AMTooltipView: UIView {
         self.focusFrame = focusFrame
         setup()
         self.options = options
-        applyOptions()
+        
+        // Custom
+        // Previously: without if condition
+        // applyOptions()
+        
+        if let attrMessage = attributedMessage {
+            applyOptions(withAttributedText: true)
+        } else {
+            applyOptions(withAttributedText: false)
+        }
+        
         
         
         //register notification for rotate
@@ -309,27 +338,31 @@ open class AMTooltipView: UIView {
         tap.numberOfTouchesRequired = 1
         grayWrapper.addGestureRecognizer(tap)
         
-        
-        self.show()
-        
-        
+        // Custom
+        // Previously: self.show()
+        self.show(attributedMessage: attributedMessage)
     }
     
     
-    func hideByTapGesture(){
+    @objc open func hideByTapGesture(){
     
         self.hide(completeClosure)
     
     }
     
     
+    // Custom
+    // Previously: applyOptions()
+    func applyOptions(withAttributedText: Bool){
     
-    func applyOptions(){
-    
-        
-        
-        messageLabel.textColor = self.options.textColor
-        messageLabel.font = self.options.font
+        // Custom
+        // Previously: without if condition
+        // messageLabel.textColor = self.options.textColor
+        // messageLabel.font = self.options.font
+        if !withAttributedText {
+            messageLabel.textColor = self.options.textColor
+            messageLabel.font = self.options.font
+        }
         messageLabel.textAlignment = self.options.textAlignment
         messageWrapperView.backgroundColor = self.options.textBoxBackgroundColor
         messageWrapperView.layer.cornerRadius = self.options.textBoxCornerRadius
@@ -365,17 +398,24 @@ open class AMTooltipView: UIView {
         cutOutView.layer.cornerRadius = self.options.focusViewRadius
         grayWrapper.backgroundColor = self.options.overlayBackgroundColor
         
+        topButtonOk.backgroundColor = self.options.okButtonBgColor
+        topButtonOk.setTitle(self.options.okButtonText, for: .normal)
+        topDummyLabel.text = self.options.okButtonText
+        bottomButtonOk.backgroundColor = self.options.okButtonBgColor
+        bottomButtonOk.setTitle(self.options.okButtonText, for: .normal)
+        bottomDummyLabel.text = self.options.okButtonText
     }
     
     
-    
-    func show(){
+    // Custom
+    // Previously: show()
+    func show(attributedMessage:NSMutableAttributedString? = nil){
         
         
         
         self.alpha = 0
-        textWidthConstraint.constant = options.textWidth
-        bottomTextWidthConstraint.constant  = textWidthConstraint.constant
+        //textWidthConstraint.constant = options.textWidth
+        //bottomTextWidthConstraint.constant  = textWidthConstraint.constant
         self.layoutIfNeeded()
         
         
@@ -398,8 +438,8 @@ open class AMTooltipView: UIView {
         
         topDotLeftSpace.constant = grayWrapper.cutView.frame.size.width/2-7
         bottomDotLeftSpace.constant = topDotLeftSpace.constant
-        messageRightSpaceFromTopDot.constant = -textWidthConstraint.constant/2-6
-        messageRightSpaceFromBottomDot.constant = -messageRightSpaceFromTopDot.constant+4
+        //messageRightSpaceFromTopDot.constant = -textWidthConstraint.constant/2-6
+        //messageRightSpaceFromBottomDot.constant = -messageRightSpaceFromTopDot.constant+4
         
         
         
@@ -417,45 +457,61 @@ open class AMTooltipView: UIView {
         
         
         //check popup in window frame
-       
-            let spaceFromLeftSide = cutOutViewX.constant + cutOutViewWidth.constant/2 - (options.textWidth + padding*2)/2
+            let leftHalfWidth = cutOutViewWidth.constant/2
+            let leftHalfTextWidth = (options.textWidth + padding*2)/2
+            let spaceFromLeftSide = cutOutViewX.constant + leftHalfWidth - leftHalfTextWidth
             
             if spaceFromLeftSide < 0{
                 
                 if options.side == .bottom {
-                    messageRightSpaceFromBottomDot.constant -= spaceFromLeftSide - padding
+                    //messageRightSpaceFromBottomDot.constant -= spaceFromLeftSide - padding
                 }
                 else if options.side == .top{
-                    messageRightSpaceFromTopDot.constant += spaceFromLeftSide - padding
+                    //messageRightSpaceFromTopDot.constant += spaceFromLeftSide - padding
                 }
             }
-            
-            let spaceFromRightSide = cutOutViewX.constant + cutOutViewWidth.constant/2 + (options.textWidth + padding*2)/2
+        
+            let rightHalfWidth = cutOutViewWidth.constant/2
+            let rightHalfTextWidth = (options.textWidth + padding*2)/2
+            let spaceFromRightSide = cutOutViewX.constant + rightHalfWidth + rightHalfTextWidth
             
             if spaceFromRightSide > targetView.frame.size.width{
                 
                 if options.side == .bottom {
-                    messageRightSpaceFromBottomDot.constant -= spaceFromRightSide - ( targetView.frame.size.width )
+                    //messageRightSpaceFromBottomDot.constant -= spaceFromRightSide - ( targetView.frame.size.width )
                 }
                 else if options.side == .top{
-                    messageRightSpaceFromTopDot.constant += spaceFromRightSide - ( targetView.frame.size.width )
+                    //messageRightSpaceFromTopDot.constant += spaceFromRightSide - ( targetView.frame.size.width )
                 }
             }
             
-       
-        
-        
-        messageLabel.text = message
-        bottomMessageLabel.text = message
+       // Custom
+       // Previously: without if condition
+       // messageLabel.text = message
+       // bottomMessageLabel.text = message
+        if let attrMessage = attributedMessage {
+            messageLabel.attributedText = attrMessage
+            bottomMessageLabel.attributedText = attrMessage
+        } else {
+            messageLabel.text = message
+            bottomMessageLabel.text = message
+        }
         
         UIView.animate(withDuration: 0.3, animations: {
             self.alpha = 1
             self.layoutIfNeeded()
         }) { (finished:Bool) in
-            
-            
+            self.isBeingDisplayed = true
         }
         
+        topDummyLabel.textColor = .clear
+        bottomDummyLabel.textColor = .clear
+        topButtonOk.layer.masksToBounds = true
+        topButtonOk.layer.cornerRadius = options.okButtonCornerRadius
+        topButtonOk.contentHorizontalAlignment = options.okButtonAlignment
+        bottomButtonOk.layer.masksToBounds = true
+        bottomButtonOk.layer.cornerRadius = options.okButtonCornerRadius
+        bottomButtonOk.contentHorizontalAlignment = options.okButtonAlignment
     }
     
     
@@ -472,45 +528,26 @@ open class AMTooltipView: UIView {
             if complete != nil{
                 complete()
             }
+            self.isBeingDisplayed = false
         }
         
     }
     
+    @IBAction func didTapOkBtn(_ sender: Any) {
+        hideByTapGesture()
+    }
     
     //MARK: - rotate hande
     
-    func deviceOrientationDidChangeNotification(notification:NSNotification){
+    @objc func deviceOrientationDidChangeNotification(notification:NSNotification){
         
-        self.hide { 
-            
-            if self.focusView != nil{
-                AMTooltipView(options: self.options,
-                              message: self.messageLabel.text,
-                              focusView: self.focusView,
-                              target: self.targetView,
-                              complete: self.completeClosure)
-            }
-            else{
-                AMTooltipView(options: self.options,
-                              message: self.messageLabel.text,
-                              focusFrame: self.focusFrame,
-                              target: self.targetView,
-                              complete: self.completeClosure)
-            }
-            
-        }
-    
+        // Deleted to fix tutoprial when app moving from background
     }
-    
-    
-    
 }
 
 //MARK: -
 
-
 class CutOutViewWrapper:UIView{
-    
     
     open var cutView:UIView!
     
@@ -527,7 +564,6 @@ class CutOutViewWrapper:UIView{
             context.setBlendMode(.normal)
         }
     }
-    
 }
 
  

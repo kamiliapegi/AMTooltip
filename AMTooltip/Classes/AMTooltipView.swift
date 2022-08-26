@@ -17,6 +17,7 @@ import UIKit
 
 
 @objc public protocol AMTooltipViewDelegate {
+    
 }
 
 
